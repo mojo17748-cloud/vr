@@ -2,45 +2,104 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>360° Memory Room — Full (Gyro + Sidebar + Fullscreen)</title>
+  <title>360° Memory Room — Bottom-left Horizontal Videos (Small)</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     html,body{height:100%;margin:0;background:#000;font-family:Arial, sans-serif}
     a-scene, canvas{width:100%;height:100%;display:block}
 
-    /* Sidebar */
-    #sidebar{position:fixed;right:12px;top:12px;width:320px;max-height:calc(100% - 24px);
-      background:rgba(0,0,0,0.55);padding:10px;border-radius:10px;overflow-y:auto;z-index:9999;transition:transform .25s ease}
-    .vid-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.03)}
-    .vid-thumb{width:120px;height:68px;border-radius:6px;overflow:hidden;position:relative;flex-shrink:0;background:#000}
-    .vid-thumb video{width:100%;height:100%;object-fit:cover;display:block}
-    .centerBtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
-      width:44px;height:44px;border-radius:22px;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;
-      color:#fff;font-size:20px;border:2px solid rgba(255,255,255,0.12);cursor:pointer}
-    .vid-meta{flex:1;color:#fff;font-size:13px}
-    .controls-row{display:flex;justify-content:space-between;align-items:center}
-    .btn{background:rgba(255,255,255,0.08);color:#fff;border:0;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px}
+    /* ---------- Bottom-left horizontal strip (compact) ---------- */
+    #sidebar{
+      position:fixed;
+      left:12px;
+      bottom:12px;
+      height:92px;                      /* compact strip height */
+      width:auto;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding:8px;
+      background:rgba(0,0,0,0.45);
+      border-radius:10px;
+      z-index:9999;
+      box-shadow:0 8px 24px rgba(0,0,0,0.5);
+      overflow:hidden;
+    }
 
-    /* Left controls */
+    .vid-item{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:center;
+      min-width:92px;                   /* compact width */
+      max-width:120px;
+      background:rgba(255,255,255,0.02);
+      padding:6px;
+      border-radius:8px;
+    }
+
+    .vid-thumb{
+      width:88px;                       /* smaller thumbnail */
+      height:56px;                      /* small 16:9-ish */
+      border-radius:6px;
+      overflow:hidden;
+      position:relative;
+      background:#000;
+      flex-shrink:0;
+    }
+
+    .vid-thumb video{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    .centerBtn{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      z-index:5;
+      width:34px;                       /* smaller play button */
+      height:34px;
+      border-radius:50%;
+      background:rgba(0,0,0,0.66);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-size:16px;
+      border:1px solid rgba(255,255,255,0.12);
+      cursor:pointer;
+      touch-action:manipulation;
+    }
+
+    .vid-meta{ color:#fff; font-size:11px; text-align:center; width:100%; }
+
+    .controls-row{ display:flex; gap:6px; align-items:center; justify-content:center; width:100%; }
+
+    .btn{ background:rgba(255,255,255,0.08); color:#fff; border:0; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:12px; }
+
+    /* Left controls (kept top-left) */
     .leftControls { position: fixed; left: 12px; top: 12px; z-index:9999; display:flex; gap:8px; flex-direction:column; }
-    .leftControls .smallBtn { background:rgba(0,0,0,0.6); color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+    .leftControls .smallBtn { background:rgba(0,0,0,0.6); color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px }
 
-    /* Bottom note */
-    #note{position:fixed;left:12px;bottom:12px;z-index:9999;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px;font-size:12px}
+    #note{position:fixed;left:12px;bottom:120px;z-index:9999;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px;font-size:12px}
 
-    /* small responsive tweak */
-    @media (max-width:640px){#sidebar{width:260px} .vid-thumb{width:100px;height:60px}}
+    /* Small screens: ensure the strip is scrollable if it overflows */
+    @media (max-width:420px) {
+      #sidebar { left:8px; bottom:8px; height:86px; gap:6px; padding:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .vid-item { min-width:86px; }
+      .vid-thumb { width:82px; height:52px; }
+      .centerBtn { width:32px; height:32px; font-size:15px; }
+      .vid-meta { font-size:10px }
+    }
 
-    /* Simulated BG fullscreen: expands the scene but keeps sidebar visible */
-    .bg-sim-fullscreen #sidebar { right: 12px; top: 12px; } /* no change, sidebar stays */
-    .bg-sim-fullscreen a-scene { position: fixed; inset: 0; z-index: 1; } /* scene fills page */
-    .simfs-indicator{position:fixed;left:12px;top:140px;z-index:9999;background:rgba(0,0,0,0.6);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px}
+    /* Simulated fullscreen class */
+    .bg-sim-fullscreen a-scene { position: fixed; inset: 0; z-index: 1; }
+    .simfs-indicator{position:fixed;left:12px;top:140px;z-index:9999;background:rgba(0,0,0,0.6);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px; display:none}
   </style>
 </head>
 <body>
 
-  <!-- Left controls: Toggle Sidebar, Global Mute, Maximize Background, Enable Gyro -->
+  <!-- Left controls: (unchanged) -->
   <div class="leftControls">
     <button id="toggleSidebar" class="smallBtn">Hide Videos</button>
     <button id="globalMuteBtn" class="smallBtn">Unmute All</button>
@@ -49,18 +108,17 @@
   </div>
   <div id="simFsNote" class="simfs-indicator" style="display:none">Background: simulated fullscreen (sidebar still visible)</div>
 
-  <!-- Sidebar with 5 videos -->
+  <!-- Bottom-left horizontal strip -->
   <div id="sidebar" role="region" aria-label="Memory videos">
     <!-- ITEM 1 -->
     <div class="vid-item" data-index="1">
       <div class="vid-thumb">
         <video id="sideVid1" preload="metadata" playsinline webkit-playsinline muted></video>
-        <div class="centerBtn" data-index="1" title="Play / Fullscreen ▶">▶</div>
+        <button class="centerBtn" data-index="1" aria-label="Play memory 1">▶</button>
       </div>
       <div class="vid-meta">
-        <div class="title">Memory 1 — Wedding</div>
-        <div class="controls-row"><div id="dur1" style="font-size:12px;opacity:0.8">00:00</div>
-          <div><button class="btn fsBtn" data-index="1">Fullscreen</button></div></div>
+        <div class="title">Wedding</div>
+        <div class="controls-row"><div id="dur1" style="opacity:0.8">00:00</div><button class="btn fsBtn" data-index="1">Full</button></div>
       </div>
     </div>
 
@@ -68,12 +126,11 @@
     <div class="vid-item" data-index="2">
       <div class="vid-thumb">
         <video id="sideVid2" preload="metadata" playsinline webkit-playsinline muted></video>
-        <div class="centerBtn" data-index="2" title="Play / Fullscreen ▶">▶</div>
+        <button class="centerBtn" data-index="2" aria-label="Play memory 2">▶</button>
       </div>
       <div class="vid-meta">
-        <div class="title">Memory 2 — Family Trip</div>
-        <div class="controls-row"><div id="dur2" style="font-size:12px;opacity:0.8">00:00</div>
-          <div><button class="btn fsBtn" data-index="2">Fullscreen</button></div></div>
+        <div class="title">Family Trip</div>
+        <div class="controls-row"><div id="dur2" style="opacity:0.8">00:00</div><button class="btn fsBtn" data-index="2">Full</button></div>
       </div>
     </div>
 
@@ -81,12 +138,11 @@
     <div class="vid-item" data-index="3">
       <div class="vid-thumb">
         <video id="sideVid3" preload="metadata" playsinline webkit-playsinline muted></video>
-        <div class="centerBtn" data-index="3" title="Play / Fullscreen ▶">▶</div>
+        <button class="centerBtn" data-index="3" aria-label="Play memory 3">▶</button>
       </div>
       <div class="vid-meta">
-        <div class="title">Memory 3 — Childhood Home</div>
-        <div class="controls-row"><div id="dur3" style="font-size:12px;opacity:0.8">00:00</div>
-          <div><button class="btn fsBtn" data-index="3">Fullscreen</button></div></div>
+        <div class="title">Childhood</div>
+        <div class="controls-row"><div id="dur3" style="opacity:0.8">00:00</div><button class="btn fsBtn" data-index="3">Full</button></div>
       </div>
     </div>
 
@@ -94,12 +150,11 @@
     <div class="vid-item" data-index="4">
       <div class="vid-thumb">
         <video id="sideVid4" preload="metadata" playsinline webkit-playsinline muted></video>
-        <div class="centerBtn" data-index="4" title="Play / Fullscreen ▶">▶</div>
+        <button class="centerBtn" data-index="4" aria-label="Play memory 4">▶</button>
       </div>
       <div class="vid-meta">
-        <div class="title">Memory 4 — Festival</div>
-        <div class="controls-row"><div id="dur4" style="font-size:12px;opacity:0.8">00:00</div>
-          <div><button class="btn fsBtn" data-index="4">Fullscreen</button></div></div>
+        <div class="title">Festival</div>
+        <div class="controls-row"><div id="dur4" style="opacity:0.8">00:00</div><button class="btn fsBtn" data-index="4">Full</button></div>
       </div>
     </div>
 
@@ -107,17 +162,16 @@
     <div class="vid-item" data-index="5">
       <div class="vid-thumb">
         <video id="sideVid5" preload="metadata" playsinline webkit-playsinline muted></video>
-        <div class="centerBtn" data-index="5" title="Play / Fullscreen ▶">▶</div>
+        <button class="centerBtn" data-index="5" aria-label="Play memory 5">▶</button>
       </div>
       <div class="vid-meta">
-        <div class="title">Memory 5 — Garden</div>
-        <div class="controls-row"><div id="dur5" style="font-size:12px;opacity:0.8">00:00</div>
-          <div><button class="btn fsBtn" data-index="5">Fullscreen</button></div></div>
+        <div class="title">Garden</div>
+        <div class="controls-row"><div id="dur5" style="opacity:0.8">00:00</div><button class="btn fsBtn" data-index="5">Full</button></div>
       </div>
     </div>
   </div>
 
-  <div id="note">Tip: center button plays & opens fullscreen. Use "Maximize Background" to enlarge 360° while keeping sidebar.</div>
+  <div id="note">Tip: tap center ▶ to play & open fullscreen. Use "Maximize Background" to enlarge 360° while keeping controls.</div>
 
   <!-- A-Frame scene for 360 background -->
   <a-scene embedded style="position:fixed;inset:0;z-index:1">
@@ -311,10 +365,10 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-/* Sidebar toggle */
+/* Sidebar hide/show (still works) */
 toggleSidebarBtn.addEventListener('click', ()=>{
   const hidden = sidebar.style.display === 'none';
-  sidebar.style.display = hidden ? 'block' : 'none';
+  sidebar.style.display = hidden ? 'flex' : 'none';
   toggleSidebarBtn.textContent = hidden ? 'Hide Videos' : 'Show Videos';
   if(!hidden){ // if hiding, pause all vids and reset icons
     sideVids.forEach((v,i)=>{ v.pause(); const btn = centerBtns.find(b=>b.dataset.index==(i+1)); if(btn) btn.textContent='▶'; });
@@ -322,9 +376,9 @@ toggleSidebarBtn.addEventListener('click', ()=>{
 });
 
 /* Simulated BG fullscreen toggle */
-bgToggle.addEventListener('click', ()=>{
+bgToggle.addEventListener('click', ()=> {
   simFs = !simFs;
-  if(simFs){
+  if (simFs) {
     document.documentElement.classList.add('bg-sim-fullscreen');
     simFsNote.style.display = 'block';
     bgToggle.textContent = 'Exit Background Max';
@@ -336,31 +390,25 @@ bgToggle.addEventListener('click', ()=>{
 });
 
 /* Visibility: pause side videos when tab not visible */
-document.addEventListener('visibilitychange', ()=>{
+document.addEventListener('visibilitychange', ()=> {
   if (document.hidden) {
     sideVids.forEach((v,i)=>{ if(!v.paused) { v.pause(); const btn = centerBtns.find(b=>b.dataset.index==(i+1)); if(btn) btn.textContent='▶'; } });
   }
 });
 
-/* ====== GYROSCOPE (DeviceOrientation) integration ======
-   Enables phone gyro to control the A-Frame camera rotation smoothly.
-   iOS requires DeviceOrientationEvent.requestPermission() and HTTPS.
-=========================================================*/
-
+/* ====== GYROSCOPE (DeviceOrientation) integration ====== */
 (function setupGyro() {
   if (!afCameraEl) {
     console.warn('Gyro: A-Frame camera not found; gyro disabled.');
     return;
   }
 
-  // smoothing factor (0..1) - lower = smoother (more lag)
   const smoothing = 0.12;
   let referenceAlpha = null;
   let gyroOn = false;
   let targetEuler = new THREE.Euler(0,0,0,'YXZ');
   let appliedEuler = new THREE.Euler(0,0,0,'YXZ');
 
-  // device orientation handler
   function handleDO(e) {
     if (!gyroOn) return;
     const alpha = (e.alpha === null) ? 0 : e.alpha;
@@ -368,53 +416,40 @@ document.addEventListener('visibilitychange', ()=>{
     const gamma = (e.gamma === null) ? 0 : e.gamma;
 
     if (referenceAlpha === null) referenceAlpha = alpha;
-
     const relAlpha = alpha - referenceAlpha;
 
-    // map to radians — tune inversion if necessary for your device
-    const yaw   = THREE.MathUtils.degToRad(-relAlpha); // rotate around Y
-    const pitch = THREE.MathUtils.degToRad(beta);     // rotate around X
-    const roll  = THREE.MathUtils.degToRad(gamma);    // rotate around Z
+    const yaw   = THREE.MathUtils.degToRad(-relAlpha);
+    const pitch = THREE.MathUtils.degToRad(beta);
+    const roll  = THREE.MathUtils.degToRad(gamma);
 
-    // gentle scaling to reduce wild swings
     targetEuler.set(pitch * 0.9, yaw * 0.9, roll * 0.9, 'YXZ');
   }
 
-  // RAF update loop
   function rafUpdate() {
     if (!gyroOn) return;
-    // lerp each Euler angle
     appliedEuler.x += (targetEuler.x - appliedEuler.x) * smoothing;
     appliedEuler.y += (targetEuler.y - appliedEuler.y) * smoothing;
     appliedEuler.z += (targetEuler.z - appliedEuler.z) * smoothing;
-
-    // apply to camera object3D
     try {
       afCameraEl.object3D.rotation.x = appliedEuler.x;
       afCameraEl.object3D.rotation.y = appliedEuler.y;
       afCameraEl.object3D.rotation.z = appliedEuler.z;
-    } catch(e) { /* ignore if object3D not ready */ }
-
+    } catch(e) {}
     requestAnimationFrame(rafUpdate);
   }
 
   async function enableGyro() {
     if (gyroOn) return;
-    // iOS permission flow
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
         const resp = await DeviceOrientationEvent.requestPermission();
-        if (resp !== 'granted') {
-          alert('Gyro permission denied. You can still use touch controls.');
-          return;
-        }
+        if (resp !== 'granted') { alert('Gyro permission denied. You can still use touch controls.'); return; }
       } catch(err) {
         console.warn('Gyro permission request error:', err);
         alert('Gyro permission request failed — try again.');
         return;
       }
     }
-    // attach
     window.addEventListener('deviceorientation', handleDO, true);
     referenceAlpha = null;
     gyroOn = true;
@@ -441,6 +476,3 @@ console.log('ASSETS', ASSETS);
 </script>
 </body>
 </html>
-
-
-
