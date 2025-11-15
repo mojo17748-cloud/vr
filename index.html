@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>360° Memory Room — Full (Gyro + Sidebar + Fullscreen)</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0;background:#000;font-family:Arial, sans-serif}
+    a-scene, canvas{width:100%;height:100%;display:block}
+
+    /* Sidebar */
+    #sidebar{position:fixed;right:12px;top:12px;width:320px;max-height:calc(100% - 24px);
+      background:rgba(0,0,0,0.55);padding:10px;border-radius:10px;overflow-y:auto;z-index:9999;transition:transform .25s ease}
+    .vid-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.03)}
+    .vid-thumb{width:120px;height:68px;border-radius:6px;overflow:hidden;position:relative;flex-shrink:0;background:#000}
+    .vid-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+    .centerBtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
+      width:44px;height:44px;border-radius:22px;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:20px;border:2px solid rgba(255,255,255,0.12);cursor:pointer}
+    .vid-meta{flex:1;color:#fff;font-size:13px}
+    .controls-row{display:flex;justify-content:space-between;align-items:center}
+    .btn{background:rgba(255,255,255,0.08);color:#fff;border:0;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px}
+
+    /* Left controls */
+    .leftControls { position: fixed; left: 12px; top: 12px; z-index:9999; display:flex; gap:8px; flex-direction:column; }
+    .leftControls .smallBtn { background:rgba(0,0,0,0.6); color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+
+    /* Bottom note */
+    #note{position:fixed;left:12px;bottom:12px;z-index:9999;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px;font-size:12px}
+
+    /* small responsive tweak */
+    @media (max-width:640px){#sidebar{width:260px} .vid-thumb{width:100px;height:60px}}
+
+    /* Simulated BG fullscreen: expands the scene but keeps sidebar visible */
+    .bg-sim-fullscreen #sidebar { right: 12px; top: 12px; } /* no change, sidebar stays */
+    .bg-sim-fullscreen a-scene { position: fixed; inset: 0; z-index: 1; } /* scene fills page */
+    .simfs-indicator{position:fixed;left:12px;top:140px;z-index:9999;background:rgba(0,0,0,0.6);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px}
+  </style>
+</head>
+<body>
+
+  <!-- Left controls: Toggle Sidebar, Global Mute, Maximize Background, Enable Gyro -->
+  <div class="leftControls">
+    <button id="toggleSidebar" class="smallBtn">Hide Videos</button>
+    <button id="globalMuteBtn" class="smallBtn">Unmute All</button>
+    <button id="bgToggle" class="smallBtn">Maximize Background</button>
+    <button id="enableGyroBtn" class="smallBtn">Enable Gyro</button>
+  </div>
+  <div id="simFsNote" class="simfs-indicator" style="display:none">Background: simulated fullscreen (sidebar still visible)</div>
+
+  <!-- Sidebar with 5 videos -->
+  <div id="sidebar" role="region" aria-label="Memory videos">
+    <!-- ITEM 1 -->
+    <div class="vid-item" data-index="1">
+      <div class="vid-thumb">
+        <video id="sideVid1" preload="metadata" playsinline webkit-playsinline muted></video>
+        <div class="centerBtn" data-index="1" title="Play / Fullscreen ▶">▶</div>
+      </div>
+      <div class="vid-meta">
+        <div class="title">Memory 1 — Wedding</div>
+        <div class="controls-row"><div id="dur1" style="font-size:12px;opacity:0.8">00:00</div>
+          <div><button class="btn fsBtn" data-index="1">Fullscreen</button></div></div>
+      </div>
+    </div>
+
+    <!-- ITEM 2 -->
+    <div class="vid-item" data-index="2">
+      <div class="vid-thumb">
+        <video id="sideVid2" preload="metadata" playsinline webkit-playsinline muted></video>
+        <div class="centerBtn" data-index="2" title="Play / Fullscreen ▶">▶</div>
+      </div>
+      <div class="vid-meta">
+        <div class="title">Memory 2 — Family Trip</div>
+        <div class="controls-row"><div id="dur2" style="font-size:12px;opacity:0.8">00:00</div>
+          <div><button class="btn fsBtn" data-index="2">Fullscreen</button></div></div>
+      </div>
+    </div>
+
+    <!-- ITEM 3 -->
+    <div class="vid-item" data-index="3">
+      <div class="vid-thumb">
+        <video id="sideVid3" preload="metadata" playsinline webkit-playsinline muted></video>
+        <div class="centerBtn" data-index="3" title="Play / Fullscreen ▶">▶</div>
+      </div>
+      <div class="vid-meta">
+        <div class="title">Memory 3 — Childhood Home</div>
+        <div class="controls-row"><div id="dur3" style="font-size:12px;opacity:0.8">00:00</div>
+          <div><button class="btn fsBtn" data-index="3">Fullscreen</button></div></div>
+      </div>
+    </div>
+
+    <!-- ITEM 4 -->
+    <div class="vid-item" data-index="4">
+      <div class="vid-thumb">
+        <video id="sideVid4" preload="metadata" playsinline webkit-playsinline muted></video>
+        <div class="centerBtn" data-index="4" title="Play / Fullscreen ▶">▶</div>
+      </div>
+      <div class="vid-meta">
+        <div class="title">Memory 4 — Festival</div>
+        <div class="controls-row"><div id="dur4" style="font-size:12px;opacity:0.8">00:00</div>
+          <div><button class="btn fsBtn" data-index="4">Fullscreen</button></div></div>
+      </div>
+    </div>
+
+    <!-- ITEM 5 -->
+    <div class="vid-item" data-index="5">
+      <div class="vid-thumb">
+        <video id="sideVid5" preload="metadata" playsinline webkit-playsinline muted></video>
+        <div class="centerBtn" data-index="5" title="Play / Fullscreen ▶">▶</div>
+      </div>
+      <div class="vid-meta">
+        <div class="title">Memory 5 — Garden</div>
+        <div class="controls-row"><div id="dur5" style="font-size:12px;opacity:0.8">00:00</div>
+          <div><button class="btn fsBtn" data-index="5">Fullscreen</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="note">Tip: center button plays & opens fullscreen. Use "Maximize Background" to enlarge 360° while keeping sidebar.</div>
+
+  <!-- A-Frame scene for 360 background -->
+  <a-scene embedded style="position:fixed;inset:0;z-index:1">
+    <a-assets>
+      <video id="bg360" playsinline webkit-playsinline loop crossorigin="anonymous" muted></video>
+      <video id="bg360Asset" src="#bg360"></video>
+    </a-assets>
+
+    <a-sky id="sky" src="#bg360" rotation="0 -90 0"></a-sky>
+    <a-entity id="afCamera" camera look-controls position="0 1.6 0"></a-entity>
+  </a-scene>
+
+<script>
+/* ========= ASSET PATHS — EDIT ONLY THESE ========= */
+const ASSETS = {
+  bg360:  'assets/6060.mp4',  // 360° background
+  small1: 'assets/6061.mp4',
+  small2: 'assets/6062.mp4',
+  small3: 'assets/6063.mp4',
+  small4: 'assets/6064.mp4',
+  small5: 'assets/6065.mp4'
+};
+/* ================================================ */
+
+/* DOM refs */
+const bg360 = document.getElementById('bg360');
+const sideVids = [
+  document.getElementById('sideVid1'),
+  document.getElementById('sideVid2'),
+  document.getElementById('sideVid3'),
+  document.getElementById('sideVid4'),
+  document.getElementById('sideVid5')
+];
+const centerBtns = Array.from(document.getElementsByClassName('centerBtn'));
+const fsBtns = Array.from(document.getElementsByClassName('fsBtn'));
+const toggleSidebarBtn = document.getElementById('toggleSidebar');
+const sidebar = document.getElementById('sidebar');
+const bgToggle = document.getElementById('bgToggle');
+const simFsNote = document.getElementById('simFsNote');
+const globalMuteBtn = document.getElementById('globalMuteBtn');
+const enableGyroBtn = document.getElementById('enableGyroBtn');
+const afCameraEl = document.getElementById('afCamera'); // used by gyro script
+
+/* assign sources */
+bg360.src = ASSETS.bg360;
+sideVids[0].src = ASSETS.small1;
+sideVids[1].src = ASSETS.small2;
+sideVids[2].src = ASSETS.small3;
+sideVids[3].src = ASSETS.small4;
+sideVids[4].src = ASSETS.small5;
+
+/* state */
+let globalMuted = true;    // start muted (sidebar videos muted)
+let singlePlay = true;     // enforce single playing
+let simFs = false;         // simulated bg fullscreen state
+let gyroEnabled = false;
+
+/* initialize: set muted state on side videos */
+function applyGlobalMute() {
+  sideVids.forEach(v => { try { v.muted = globalMuted; } catch(e){} });
+  globalMuteBtn.textContent = globalMuted ? 'Unmute All' : 'Mute All';
+}
+applyGlobalMute();
+
+/* auto-play background muted loop (may require gesture on mobile) */
+bg360.muted = true; bg360.loop = true;
+bg360.play().catch(()=>console.warn('Background autoplay blocked — user gesture required'));
+
+/* helper: format time */
+function formatTime(s){ if(isNaN(s)) return '00:00'; const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+
+/* show durations and update UI */
+sideVids.forEach((v,i)=>{
+  const durEl = document.getElementById('dur'+(i+1));
+  v.addEventListener('loadedmetadata', ()=> durEl.textContent = formatTime(v.duration));
+  v.addEventListener('timeupdate', ()=> durEl.textContent = formatTime(v.currentTime));
+  v.addEventListener('ended', ()=> {
+    const btn = centerBtns.find(b=>b.dataset.index == (i+1));
+    if(btn) btn.textContent = '▶';
+  });
+});
+
+/* ensure singlePlay: pause others */
+function pauseOtherSideVideos(exceptIndex) {
+  sideVids.forEach((other, j) => {
+    if (j !== exceptIndex && !other.paused) {
+      other.pause();
+      const cb = centerBtns.find(b => b.dataset.index == (j+1));
+      if (cb) cb.textContent = '▶';
+    }
+  });
+}
+
+/* center button behavior: play inline AND request native fullscreen */
+centerBtns.forEach(btn=>{
+  btn.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const idx = Number(btn.dataset.index)-1;
+    const v = sideVids[idx];
+    if(!v) return;
+
+    if (v.paused) {
+      // single-play enforcement
+      if (singlePlay) pauseOtherSideVideos(idx);
+
+      // apply mute according to globalMuted initially
+      v.muted = globalMuted;
+
+      try {
+        await v.play();
+        btn.textContent = '❚❚';
+      } catch (err) {
+        console.warn('Play blocked:', err);
+        alert('Playback blocked by browser. Tap anywhere to give permission and try again.');
+        return;
+      }
+
+      // Then try to request native fullscreen for this video
+      try {
+        // Auto-unmute in fullscreen if globalMuted is true (we'll unmute now so the fullscreen has sound)
+        if (globalMuted) {
+          v.muted = false; // temporary unmute for fullscreen
+        }
+        if (v.requestFullscreen) await v.requestFullscreen();
+        else if (v.webkitRequestFullscreen) await v.webkitRequestFullscreen();
+        else if (v.mozRequestFullScreen) await v.mozRequestFullScreen();
+        else if (v.msRequestFullscreen) await v.msRequestFullscreen();
+      } catch(fsErr){
+        console.warn('Fullscreen failed or blocked:', fsErr);
+        // if fullscreen fails, leave inline playing state as-is
+      }
+    } else {
+      // pause and if not in fullscreen, respect global mute setting
+      v.pause();
+      btn.textContent = '▶';
+      // If exiting fullscreen on user action, browser may fire fullscreenchange; we handle mute restore there.
+    }
+  });
+});
+
+/* fullscreen buttons (separate control) */
+fsBtns.forEach(b=>{
+  b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const idx = Number(b.dataset.index)-1;
+    const v = sideVids[idx];
+    if(!v) return;
+
+    if (singlePlay) pauseOtherSideVideos(idx);
+
+    try { await v.play(); } catch(e){ console.warn('play blocked', e); }
+    // auto-unmute in fullscreen if globalMuted set
+    if (globalMuted) v.muted = false;
+    try {
+      if (v.requestFullscreen) await v.requestFullscreen();
+      else if (v.webkitRequestFullscreen) await v.webkitRequestFullscreen();
+      else if (v.mozRequestFullScreen) await v.mozRequestFullScreen();
+      else if (v.msRequestFullscreen) await v.msRequestFullscreen();
+    } catch(err) {
+      console.warn('fs fail', err);
+      alert('Fullscreen might be blocked on this device.');
+    }
+    // update center button state visually
+    const cb = centerBtns.find(x=>x.dataset.index==(idx+1)); if(cb) cb.textContent='❚❚';
+  });
+});
+
+/* GLOBAL MUTE BUTTON */
+globalMuteBtn.addEventListener('click', () => {
+  globalMuted = !globalMuted;
+  applyGlobalMute();
+});
+
+/* Monitor fullscreen change to restore mute if needed */
+document.addEventListener('fullscreenchange', () => {
+  // If no fullscreen element, user exited fullscreen
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+    // Re-apply global mute to any side video that may have been unmuted for fullscreen
+    sideVids.forEach(v => {
+      try { v.muted = globalMuted; } catch(e) {}
+    });
+  } else {
+    // When entering fullscreen, find which element is fullscreen
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    // If the fullscreen element is one of our side videos, ensure it is unmuted for playback
+    sideVids.forEach(v => {
+      if (fsEl === v) {
+        try { v.muted = false; } catch(e) {}
+      }
+    });
+  }
+});
+
+/* Sidebar toggle */
+toggleSidebarBtn.addEventListener('click', ()=>{
+  const hidden = sidebar.style.display === 'none';
+  sidebar.style.display = hidden ? 'block' : 'none';
+  toggleSidebarBtn.textContent = hidden ? 'Hide Videos' : 'Show Videos';
+  if(!hidden){ // if hiding, pause all vids and reset icons
+    sideVids.forEach((v,i)=>{ v.pause(); const btn = centerBtns.find(b=>b.dataset.index==(i+1)); if(btn) btn.textContent='▶'; });
+  }
+});
+
+/* Simulated BG fullscreen toggle */
+bgToggle.addEventListener('click', ()=>{
+  simFs = !simFs;
+  if(simFs){
+    document.documentElement.classList.add('bg-sim-fullscreen');
+    simFsNote.style.display = 'block';
+    bgToggle.textContent = 'Exit Background Max';
+  } else {
+    document.documentElement.classList.remove('bg-sim-fullscreen');
+    simFsNote.style.display = 'none';
+    bgToggle.textContent = 'Maximize Background';
+  }
+});
+
+/* Visibility: pause side videos when tab not visible */
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) {
+    sideVids.forEach((v,i)=>{ if(!v.paused) { v.pause(); const btn = centerBtns.find(b=>b.dataset.index==(i+1)); if(btn) btn.textContent='▶'; } });
+  }
+});
+
+/* ====== GYROSCOPE (DeviceOrientation) integration ======
+   Enables phone gyro to control the A-Frame camera rotation smoothly.
+   iOS requires DeviceOrientationEvent.requestPermission() and HTTPS.
+=========================================================*/
+
+(function setupGyro() {
+  if (!afCameraEl) {
+    console.warn('Gyro: A-Frame camera not found; gyro disabled.');
+    return;
+  }
+
+  // smoothing factor (0..1) - lower = smoother (more lag)
+  const smoothing = 0.12;
+  let referenceAlpha = null;
+  let gyroOn = false;
+  let targetEuler = new THREE.Euler(0,0,0,'YXZ');
+  let appliedEuler = new THREE.Euler(0,0,0,'YXZ');
+
+  // device orientation handler
+  function handleDO(e) {
+    if (!gyroOn) return;
+    const alpha = (e.alpha === null) ? 0 : e.alpha;
+    const beta  = (e.beta  === null) ? 0 : e.beta;
+    const gamma = (e.gamma === null) ? 0 : e.gamma;
+
+    if (referenceAlpha === null) referenceAlpha = alpha;
+
+    const relAlpha = alpha - referenceAlpha;
+
+    // map to radians — tune inversion if necessary for your device
+    const yaw   = THREE.MathUtils.degToRad(-relAlpha); // rotate around Y
+    const pitch = THREE.MathUtils.degToRad(beta);     // rotate around X
+    const roll  = THREE.MathUtils.degToRad(gamma);    // rotate around Z
+
+    // gentle scaling to reduce wild swings
+    targetEuler.set(pitch * 0.9, yaw * 0.9, roll * 0.9, 'YXZ');
+  }
+
+  // RAF update loop
+  function rafUpdate() {
+    if (!gyroOn) return;
+    // lerp each Euler angle
+    appliedEuler.x += (targetEuler.x - appliedEuler.x) * smoothing;
+    appliedEuler.y += (targetEuler.y - appliedEuler.y) * smoothing;
+    appliedEuler.z += (targetEuler.z - appliedEuler.z) * smoothing;
+
+    // apply to camera object3D
+    try {
+      afCameraEl.object3D.rotation.x = appliedEuler.x;
+      afCameraEl.object3D.rotation.y = appliedEuler.y;
+      afCameraEl.object3D.rotation.z = appliedEuler.z;
+    } catch(e) { /* ignore if object3D not ready */ }
+
+    requestAnimationFrame(rafUpdate);
+  }
+
+  async function enableGyro() {
+    if (gyroOn) return;
+    // iOS permission flow
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const resp = await DeviceOrientationEvent.requestPermission();
+        if (resp !== 'granted') {
+          alert('Gyro permission denied. You can still use touch controls.');
+          return;
+        }
+      } catch(err) {
+        console.warn('Gyro permission request error:', err);
+        alert('Gyro permission request failed — try again.');
+        return;
+      }
+    }
+    // attach
+    window.addEventListener('deviceorientation', handleDO, true);
+    referenceAlpha = null;
+    gyroOn = true;
+    rafUpdate();
+    enableGyroBtn.textContent = 'Disable Gyro';
+    console.log('Gyro enabled');
+  }
+
+  function disableGyro() {
+    if (!gyroOn) return;
+    window.removeEventListener('deviceorientation', handleDO, true);
+    gyroOn = false;
+    enableGyroBtn.textContent = 'Enable Gyro';
+    console.log('Gyro disabled');
+  }
+
+  enableGyroBtn.addEventListener('click', async () => {
+    if (!gyroOn) await enableGyro(); else disableGyro();
+  });
+})();
+
+/* Helpful debug */
+console.log('ASSETS', ASSETS);
+</script>
+</body>
+</html>
